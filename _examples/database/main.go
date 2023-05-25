@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/otyang/go-starter/pkg/datastore"
+	"github.com/otyang/go-pkg/datastore"
 	"github.com/uptrace/bun"
 )
 

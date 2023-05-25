@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/otyang/go-starter/pkg/response"
+	"github.com/otyang/go-pkg/response"
 )
 
 func main() {

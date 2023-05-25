@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/otyang/go-starter/pkg/pagination"
+	"github.com/otyang/go-pkg/pagination"
 )
 
 func main() {

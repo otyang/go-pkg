@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/otyang/go-starter/pkg/datastore"
+	"github.com/otyang/go-pkg/datastore"
 )
 
 func main() {
