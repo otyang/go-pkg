@@ -36,7 +36,6 @@ func TestMustLoad(t *testing.T) {
 	assert.Panics(t, actualPanic1, "case 1: it should panic. it didnt")
 
 	// case 2
-
 	expected1 := Example_ConfigStruct{
 		AppName: "testing-service",
 		AppPort: 9000,

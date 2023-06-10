@@ -11,49 +11,44 @@ import (
 )
 
 // IDBHelper is an interface that provides quick helpers for handling database operations
-type IDBHelper interface {
-	// Close: closes the connection
-	Close() error
+type IDBRepository interface {
 	// Migration create ONE OR MORE tables ONLY when they dont exists.
 	Migrate(ctx context.Context, modelsPtr ...any) error
-	// UpdateByPKey updates ONE OR MORE record by their primary-key (set in struct)
-	UpdateByPKey(ctx context.Context, modelsPtr any) error
-	// UpsertByPKey updates ONE OR MORE record by their primary-key and if the record
-	// doesn't exist, it inserts it.
-	UpsertByPKey(ctx context.Context, modelsPtr any) error
-	// Insert inserts ONE OR MORE record.
-	Insert(ctx context.Context, modelsPtr any, ignoreDupicates bool) error
-	// FindByPKey gets ONE record by primary-key (set in struct). [limit 1]
-	FindByPKey(ctx context.Context, modelsPtr any) error
-	// FindByColumn gets a record via supplied column-name & column-value.  [limit 1]
-	FindByColumn(ctx context.Context, modelsPtr any, columnName string, columnValue any) error
-	// List all records of a table. Useful for loading settings from db
-	ListAll(ctx context.Context, modelsPtr any) error
-	// List records of a table via supplied column and column value
-	ListByColumn(ctx context.Context, modelsPtr any, columnName string, columnValue any) error
-	// DeleteByPKey deletes a record using primary key in struct
-	DeleteByPKey(ctx context.Context, modelsPtr any) error
-	// DeleteByColumn deletes ONE OR MORE record via supplied column-name & column-value
-	DeleteByColumn(ctx context.Context, modelsPtr, columnName string, columnValue any) error
+	// UpdateByPK updates a record by their primary-key (set in struct)
+	Update(ctx context.Context, modelsPtr any) error
+	// UpdateBulk updates multiple rows via primarykey
+	UpdateBulk(ctx context.Context, modelPtr any) error
+	// Upsert updates ONE OR MORE record. if the record doesn't exist, it inserts it.
+	Upsert(ctx context.Context, modelsPtr any) error
+	// Create inserts ONE OR MORE record.
+	Create(ctx context.Context, modelPtr any, ignoreDupicates bool) error
+	// FindByPK gets ONE record by primary-key (set in struct). [limit 1]
+	FindByPK(ctx context.Context, modelPtr any) error
+	// FindByColumn gets record(s) via supplied criteria.  [limit 1]
+	FindWhere(ctx context.Context, modelPtr any, sc ...SelectCriteria) error
+	// List records of a table via criteria. Useful for loading settings from db
+	List(ctx context.Context, modelPtr any, sc ...SelectCriteria) error
+	// DeleteByPK deletes record(s) using primary key in struct
+	DeleteByPK(ctx context.Context, modelsPtr any) error
+	// DeleteWhere deletes records(s) via criteria
+	DeleteWhere(ctx context.Context, modelsPtr any, dc ...DeleteCriteria) error
 
 	// NewWithTx returns a clone of DBHelper, HOWEVER OVERRIDING the dbConnection with a db-Transaction conn
 	// as the new dbConnection
-	NewWithTx(tx bun.Tx) IDBHelper
+	NewWithTx(tx bun.Tx) IDBRepository
 	// Transactional simplifies transactions code, by automatically:
 	//
 	// starting a transaction, rolling back the transaction if an error
 	// is encountered & finally commiting the transaction if no error.
-	// func Example_transactionUsage(ctx context.Context) {
-	// 	var example IDBHelper = nil
-	// 	example.Transactional(
-	// 		ctx,
-	// 		func(ctx context.Context, tx bun.Tx) error {
-	// 			example.NewWithTx(tx).FindByPKey(ctx, nil)
-	// 			example.NewWithTx(tx).UpdateByPKey(ctx, nil)
-	// 			return nil
-	// 		},
-	// 	)
-	// }
+	//
+	// Transactional(ctx, func(ctx context.Context, tx bun.Tx) error {
+	// 		err := NewWithTx(tx).Migrate(ctx, (*Book)(nil))
+	// 		if err != nil {
+	// 			return err
+	// 		}
+
+	// 		return NewWithTx(tx).Create(ctx, &seedBooks, true)
+	// 	})
 	Transactional(ctx context.Context, fn func(ctx context.Context, tx bun.Tx) error) error
 }
 

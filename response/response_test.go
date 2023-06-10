@@ -70,7 +70,6 @@ func TestNewSuccess(t *testing.T) {
 }
 
 func TestResponse_AsByte(t *testing.T) {
-
 	asByte := func(r any) ([]byte, error) {
 		buf := bytes.Buffer{}
 		enc := gob.NewEncoder(&buf)
@@ -95,5 +94,4 @@ func TestResponse_AsByte(t *testing.T) {
 
 	assert.Equal(t, nil, err, "error should be nil. but it isnt")
 	assert.Equal(t, expected, got, "testing for byte")
-
 }
