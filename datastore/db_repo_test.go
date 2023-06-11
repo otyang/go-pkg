@@ -17,6 +17,11 @@ func setUp(dsn string) (context.Context, *bun.DB, *DBRepository) {
 	return ctx, db, crudRepo
 }
 
+type Book struct {
+	Id    string `bun:",pk"`
+	Title string `bun:",notnull"`
+}
+
 func setUpWithMigration(dsn string) (context.Context, *bun.DB, *DBRepository, error) {
 	ctx, db, crudRepo := setUp(dsn)
 
@@ -36,17 +41,12 @@ func TestNewDBRepository(t *testing.T) {
 	assert.Equalf(t, expected, actual, "NewDBRepository() = expected %+v but got: %+v", expected, actual)
 }
 
-type Book struct {
-	Id    string `bun:",pk"`
-	Title string `bun:",notnull"`
-}
-
-type Dictionary struct {
-	Id    string `bun:",pk"`
-	Title string `bun:",notnull"`
-}
-
 func TestDBRepository_Migrate(t *testing.T) {
+	type Dictionary struct {
+		Id    string `bun:",pk"`
+		Title string `bun:",notnull"`
+	}
+
 	ctx, db, crudRepo := setUp("file::memory:?cache=shared")
 
 	err := crudRepo.Migrate(ctx, (*Book)(nil), (*Dictionary)(nil))
@@ -57,9 +57,7 @@ func TestDBRepository_Migrate(t *testing.T) {
 }
 
 func TestDBRepository_Create_Find_FindWhere_And_List(t *testing.T) {
-
 	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
-
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -96,7 +94,6 @@ func TestDBRepository_Create_Find_FindWhere_And_List(t *testing.T) {
 
 func TestDBRepository_Update(t *testing.T) {
 	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
-
 	if err != nil {
 		t.Errorf("expected %+v but got: %+v", nil, err)
 	}
@@ -142,7 +139,6 @@ func TestDBRepository_Update(t *testing.T) {
 
 func TestDBRepository_Upsert(t *testing.T) {
 	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
-
 	if err != nil {
 		t.Errorf("expected %+v but got: %+v", nil, err)
 	}
@@ -174,7 +170,6 @@ func TestDBRepository_Upsert(t *testing.T) {
 
 func TestDBRepository_Delete_And_DeleteWhere(t *testing.T) {
 	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
-
 	if err != nil {
 		t.Errorf("expected %+v but got: %+v", nil, err)
 	}
