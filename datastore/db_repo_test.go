@@ -9,17 +9,26 @@ import (
 	"github.com/uptrace/bun"
 )
 
-func connectDB(dsn string) *bun.DB {
-	dbDriver := DriverSqlite
-	dbURL := dsn //"file::memory:?cache=shared"
-	dbPoolMax := 1
-	dbPrintQueriesToStdout := true
+func setUp(dsn string) (context.Context, *bun.DB, *DBRepository) {
+	ctx := context.TODO()
+	db := NewDBConnection(DriverSqlite, dsn, 1, true)
+	crudRepo := NewDBRepository(db)
 
-	return NewDBConnection(dbDriver, dbURL, dbPoolMax, dbPrintQueriesToStdout)
+	return ctx, db, crudRepo
+}
+
+func setUpWithMigration(dsn string) (context.Context, *bun.DB, *DBRepository, error) {
+	ctx, db, crudRepo := setUp(dsn)
+
+	if err := crudRepo.Migrate(ctx, (*Book)(nil)); err != nil {
+		return nil, nil, nil, err
+	}
+
+	return ctx, db, crudRepo, nil
 }
 
 func TestNewDBRepository(t *testing.T) {
-	db := connectDB("file::memory:?cache=shared")
+	_, db, _ := setUp("file::memory:?cache=shared")
 
 	actual := NewDBRepository(db)
 	expected := &DBRepository{db: db}
@@ -38,30 +47,26 @@ type Dictionary struct {
 }
 
 func TestDBRepository_Migrate(t *testing.T) {
-	db := connectDB("file::memory:?cache=shared")
-	crudRepo := NewDBRepository(db)
+	ctx, db, crudRepo := setUp("file::memory:?cache=shared")
 
-	err := crudRepo.Migrate(context.TODO(), (*Book)(nil), (*Dictionary)(nil))
+	err := crudRepo.Migrate(ctx, (*Book)(nil), (*Dictionary)(nil))
 	assert.Equalf(t, nil, err, "expected %+v but got: %+v", nil, err)
 
-	_, err = db.NewDropTable().Model(&Book{}).Exec(context.TODO())
+	_, err = db.NewDropTable().Model(&Book{}).Exec(ctx)
 	assert.Equalf(t, nil, err, "expected %+v but got: %+v", nil, err)
 }
 
 func TestDBRepository_Create_Find_FindWhere_And_List(t *testing.T) {
-	ctx := context.TODO()
+
+	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
+
+	if err != nil {
+		t.Error(err.Error())
+	}
 
 	seedBooks := []Book{
 		{Id: "book1", Title: "hello"},
 		{Id: "book2", Title: "hello world"},
-	}
-
-	db := connectDB("file::memory:?cache=shared")
-	crudRepo := NewDBRepository(db)
-
-	err := crudRepo.Migrate(context.TODO(), (*Book)(nil))
-	if err != nil {
-		t.Error(err.Error())
 	}
 
 	err = crudRepo.Create(ctx, &seedBooks, true)
@@ -90,11 +95,9 @@ func TestDBRepository_Create_Find_FindWhere_And_List(t *testing.T) {
 }
 
 func TestDBRepository_Update(t *testing.T) {
-	ctx := context.TODO()
-	db := connectDB("file::memory:?cache=shared")
-	crudRepo := NewDBRepository(db)
+	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
 
-	if err := crudRepo.Migrate(context.TODO(), (*Book)(nil)); err != nil {
+	if err != nil {
 		t.Errorf("expected %+v but got: %+v", nil, err)
 	}
 
@@ -138,11 +141,9 @@ func TestDBRepository_Update(t *testing.T) {
 }
 
 func TestDBRepository_Upsert(t *testing.T) {
-	ctx := context.TODO()
-	db := connectDB("file::memory:?cache=shared")
-	crudRepo := NewDBRepository(db)
+	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
 
-	if err := crudRepo.Migrate(context.TODO(), (*Book)(nil)); err != nil {
+	if err != nil {
 		t.Errorf("expected %+v but got: %+v", nil, err)
 	}
 
@@ -172,20 +173,17 @@ func TestDBRepository_Upsert(t *testing.T) {
 }
 
 func TestDBRepository_Delete_And_DeleteWhere(t *testing.T) {
-	ctx := context.TODO()
-	db := connectDB("file::memory:?cache=shared")
-	crudRepo := NewDBRepository(db)
+	ctx, _, crudRepo, err := setUpWithMigration("file::memory:?cache=shared")
+
+	if err != nil {
+		t.Errorf("expected %+v but got: %+v", nil, err)
+	}
 
 	seedBooks := []Book{
 		{Id: "book1", Title: "hello"},
 		{Id: "book2", Title: "hello world"},
 		{Id: "book3", Title: "hello world"},
 		{Id: "book4", Title: "hello world"},
-	}
-
-	err := crudRepo.Migrate(context.TODO(), (*Book)(nil))
-	if err != nil {
-		t.Error(err.Error())
 	}
 
 	if err := crudRepo.Create(ctx, &seedBooks, true); err != nil {
@@ -221,8 +219,7 @@ func TestDBRepository_Delete_And_DeleteWhere(t *testing.T) {
 }
 
 func TestDBRepository_NewWithTx(t *testing.T) {
-	db := connectDB("file::memory:?cache=shared")
-	crudRepo := NewDBRepository(db)
+	_, db, crudRepo := setUp("file::memory:?cache=shared")
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -236,8 +233,7 @@ func TestDBRepository_NewWithTx(t *testing.T) {
 }
 
 func TestDBRepository_Transactional(t *testing.T) {
-	db := connectDB("file::memory:?cache=shared")
-	crudRepo := NewDBRepository(db)
+	_, _, crudRepo := setUp("file::memory:?cache=shared")
 
 	seedBooks := []Book{
 		{Id: "book1", Title: "hello"},
